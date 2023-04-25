@@ -8,10 +8,9 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State var redSliderValue = 0.0
-    @State var greenSliderValue = 0.0
-    @State var blueSliderValue = 0.0
-    @FocusState var isInputActive: Bool
+    @State private var redSliderValue = 0.0
+    @State private var greenSliderValue = 0.0
+    @State private var blueSliderValue = 0.0
 
     
     var body: some View {
@@ -57,10 +56,11 @@ struct ColorSettings: View {
     let color: Color
     @Binding var sliderValue: Double
     @State var textFieldText = ""
+    @State private var alertPresented = false
+    
     
     
     var body: some View {
-        
         HStack(spacing: 20) {
             Text("\(lround(sliderValue))")
                 .foregroundColor(.white)
@@ -86,15 +86,13 @@ struct ColorSettings: View {
         
     }
     
-    private func checkValue() {
+    func checkValue() {
         let numberTextField = Double(textFieldText) ?? sliderValue
         sliderValue = numberTextField
         if numberTextField < 1 {
             sliderValue = 1
-            textFieldText = "1"
         } else if numberTextField > 255 {
             sliderValue = 255
-            textFieldText = "255"
         }
     }
     
