@@ -8,9 +8,11 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var redSliderValue = 0.0
-    @State private var greenSliderValue = 0.0
-    @State private var blueSliderValue = 0.0
+    @State private var redSliderValue = Double.random(in: 0...255).rounded()
+    @State private var greenSliderValue = Double.random(in: 0...255).rounded()
+    @State private var blueSliderValue = Double.random(in: 0...255).rounded()
+    
+    @FocusState private var focusedField: Field?
 
     
     var body: some View {
@@ -18,32 +20,42 @@ struct ContentView: View {
             Color.cyan
                 .ignoresSafeArea()
                 .onTapGesture {
-                    self.endEditing()
+                    focusedField = nil
                 }
-            VStack(spacing: 30) {
-                ColorView(redValue: redSliderValue, greenValue: greenSliderValue, blueValue: blueSliderValue)
-                ColorSettings(color: .red, sliderValue: $redSliderValue)
-                ColorSettings(color: .green, sliderValue: $greenSliderValue)
-                ColorSettings(color: .blue, sliderValue: $blueSliderValue)
-                
+            VStack(spacing: 50) {
+                ColorView(
+                    red: redSliderValue,
+                    green: greenSliderValue,
+                    blue: blueSliderValue
+                )
+                VStack(spacing: 40) {
+                    ColorSliderView(value: $redSliderValue, color: .red)
+                        .focused($focusedField, equals: .red)
+                    ColorSliderView(value: $greenSliderValue, color: .green)
+                        .focused($focusedField, equals: .green)
+                    ColorSliderView(value: $blueSliderValue, color: .blue)
+                        .focused($focusedField, equals: .blue)
+                }
+                .frame(height: 150)
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Button(action: previousField) {
+                            Image(systemName: "chevron.up")
+                        }
+                        Button(action: nextField) {
+                            Image(systemName: "chevron.down")
+                        }
+                        Spacer()
+                        Button("Done") {
+                            focusedField = nil
+                        }
+                    }
+                }
                 Spacer()
             }
             .padding()
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    endEditing()
-                }
-            }
-        }
-        
     }
-    
-    private func endEditing() {
-            UIApplication.shared.endEditing()
-        }
 }
 
 struct ContentView_Previews: PreviewProvider {
@@ -52,71 +64,35 @@ struct ContentView_Previews: PreviewProvider {
     }
 }
 
-struct ColorSettings: View {
-    let color: Color
-    @Binding var sliderValue: Double
-    @State var textFieldText = ""
-    @State private var alertPresented = false
-    
-    
-    
-    var body: some View {
-        HStack(spacing: 20) {
-            Text("\(lround(sliderValue))")
-                .foregroundColor(.white)
-            Slider(
-                value: $sliderValue,
-                in: 0...250,
-                step: 1,
-                onEditingChanged: { _ in
-                    textFieldText = "\(sliderValue)"
-                }
-            )
-                .tint(color)
-            
-            TextField(
-                "\(lround(sliderValue))",
-                text: $textFieldText,
-                onEditingChanged: { _ in
-                    checkValue()
-                }
-            )
-            .textFieldStyle()
-        }
-        
+extension ContentView {
+    private enum Field {
+        case red
+        case green
+        case blue
     }
-    
-    func checkValue() {
-        let numberTextField = Double(textFieldText) ?? sliderValue
-        sliderValue = numberTextField
-        if numberTextField < 1 {
-            sliderValue = 1
-        } else if numberTextField > 255 {
-            sliderValue = 255
+    func nextField() {
+        switch focusedField {
+        case .red:
+            focusedField = .green
+        case .green:
+            focusedField = .blue
+        case .blue:
+            focusedField = .red
+        case .none:
+            focusedField = nil
         }
     }
-    
-}
-
-struct TextFieldViewModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .textFieldStyle(.roundedBorder)
-            .keyboardType(.decimalPad)
-            .padding(EdgeInsets(top: 2, leading: 3, bottom: 2, trailing: 3))
-            .frame(width: 70, height: 30)
-            
+    func previousField() {
+        switch focusedField {
+        case .red:
+            focusedField = .blue
+        case .green:
+            focusedField = .red
+        case .blue:
+            focusedField = .green
+        case .none:
+            focusedField = nil
+        }
     }
 }
 
-extension TextField {
-    func textFieldStyle() -> some View {
-        modifier(TextFieldViewModifier())
-    }
-}
-
-extension UIApplication {
-    func endEditing() {
-        sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-    }
-}
